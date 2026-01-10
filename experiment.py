@@ -7,7 +7,7 @@ from pathlib import Path
 #モジュールをimport 
 from config import Config
 from data_generation import generate_dataset,generate_dataset_with_fixed_Q,generate_Q
-from inverse_problem import inverse_proposed,inverse_proposed_w_chebyshev
+from inverse_problem import inverse_proposed,inverse_proposed_w_chebyshev, inverse_vi_2
 from evaluation import Q_error,compute_baseline_regret,compute_regret
 
 def run_experiment(seed=0):
@@ -30,32 +30,43 @@ def run_experiment(seed=0):
         train_data,Q_true = generate_dataset(cfg,cfg.N,cfg.seed)
         val_data = generate_dataset_with_fixed_Q(cfg,cfg.V,cfg.seed_validation,Q_true)
         
-        Q_ref = generate_Q(cfg,cfg.seed_validation)
+        
+        Q_gosa = 0.0
+        regret_ref_proposed = 0.0
+        regret_proposed = 0.0
+        for i in range(1):
+            #参照点を何種類かに分けて行う。
+            Q_ref = generate_Q(cfg,i+2)
+            Q_est = inverse_proposed(cfg,train_data,Q_ref)
+            Q_gosa += Q_error(Q_est,Q_true)
+            regret_ref_proposed += compute_regret(cfg,Q_ref,Q_true,val_data)
+            regret_proposed += compute_regret(cfg,Q_est,Q_true,val_data)
+            
 
         
 
         
         print("\n[2] Solving inverse optimization (Proposed method)")
         #逆最適化を使って推定解を導出する。
-        Q_est = inverse_proposed(cfg,train_data,Q_ref)
         Q_est_cheby = inverse_proposed_w_chebyshev(cfg,train_data)
+        Q_est_vi = inverse_vi_2(cfg,train_data)
         
         print("\n[3] Q estimation error")
         #Qの誤差を表示する。
-        Q_gosa = Q_error(Q_est,Q_true)
         Q_gosa_cheby = Q_error(Q_est_cheby,Q_true)
+        Q_gosa_vi = Q_error(Q_est_vi,Q_true)
         print(Q_gosa)
         print(Q_gosa_cheby)
-        
+        print(Q_gosa_vi)
         print("\n[4] Regret evaluation (Proposed method))")
         
         #既存手法と提案手法のRegretを計算する。
-        regret_proposed = compute_regret(cfg,Q_est,Q_true,val_data)
-        regret_ref_proposed = compute_regret(cfg,Q_ref,Q_true,val_data)
         regret_cheby_proposed = compute_regret(cfg,Q_est_cheby,Q_true,val_data)
-        print(f"Proposed method regret = {regret_proposed:.6f}")
+        regret_vi_proposed = compute_regret(cfg,Q_est_vi,Q_true,val_data)
+        print(f"Proposed method regret = {regret_proposed:.10f}")
         print(f"Proposed method regret(ref) = {regret_ref_proposed:.6f}")
-        print(f"Proposed method with chebyshev regret = {regret_cheby_proposed:.6f}")
+        print(f"Proposed method with chebyshev regret = {regret_cheby_proposed:.9f}")
+        print(f"Proposed method with vi = {regret_vi_proposed:.9f}")
         
         print("\n[5] Regret evaluation (baseline method)")
         regret_euclid,regret_maha = compute_baseline_regret(cfg,Q_true,val_data)
@@ -70,6 +81,7 @@ def run_experiment(seed=0):
             "regret_proposed": regret_proposed,
             "regret_ref": regret_ref_proposed,
             "regret_cheby_proposed":regret_cheby_proposed,
+            "regret_vi_proposed": regret_vi_proposed,
             "regret_euclid": regret_euclid,
             "regret_maha": regret_maha
         }
@@ -86,6 +98,7 @@ def run_experiment(seed=0):
                 "proposed": regret_proposed,
                 "ref": regret_ref_proposed,
                 "cheby": regret_cheby_proposed,
+                "vi": regret_vi_proposed,
                 "euclid": regret_euclid,
                 "maha": regret_maha,
             }

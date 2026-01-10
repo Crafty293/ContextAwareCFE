@@ -11,6 +11,6 @@ class Config:
         self.M = 15
         
         #experiment
-        self.seed = 252
-        self.seed_validation = 36
+        self.seed = 66632532
+        self.seed_validation = 333
         

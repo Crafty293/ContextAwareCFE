@@ -34,6 +34,7 @@ def plot_regret(results_plot, save_dir):
     regret_proposed = [r["regret"]["proposed"] for r in results_plot]
     regret_ref = [r["regret"]["ref"] for r in results_plot]
     regret_cheby = [r["regret"]["cheby"] for r in results_plot]
+    regret_vi = [r["regret"]["vi"] for r in results_plot]
     regret_euclid = [r["regret"]["euclid"] for r in results_plot]
     regret_maha = [r["regret"]["maha"] for r in results_plot]
 
@@ -41,6 +42,7 @@ def plot_regret(results_plot, save_dir):
     plt.plot(N_list, regret_proposed, marker="o", label="Proposed")
     plt.plot(N_list, regret_cheby, marker="s", label="Proposed + Chebyshev")
     plt.plot(N_list, regret_ref, marker="^", label="Reference Q")
+    plt.plot(N_list,regret_vi,linestyle="--",label="Proposed vi")
     plt.plot(N_list, regret_euclid, linestyle="--", label="Euclidean baseline")
     plt.plot(N_list, regret_maha, linestyle="--", label="Mahalanobis baseline")
 
@@ -48,7 +50,7 @@ def plot_regret(results_plot, save_dir):
     plt.ylabel("Regret (log scale)")
     plt.yscale("log")
     
-    plt.title("Regret N(2-18) (log scale)")
+    plt.title("Regret N(1-30) (log scale)")
     plt.legend()
     plt.grid(True)
 

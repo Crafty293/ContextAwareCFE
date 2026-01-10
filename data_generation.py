@@ -1,5 +1,5 @@
 from config import Config
-from forward_problem import solve_forward
+from forward_problem import solve_forward,solve_forward_w_noise
 import numpy as np
 
 
@@ -8,7 +8,6 @@ def generate_Q(cfg,seed=None):
     rng = np.random.default_rng(seed)
     Q = rng.uniform(0,8,size=(cfg.K, cfg.H))
     Q /= Q.sum()
-    Q *= 10
     return Q
 
 #コンテキストを生成する((N+V)*H) → 結局こっち使うことになりそう。
@@ -53,7 +52,7 @@ def generate_constraints(cfg, num, seed=None):
     rng = np.random.default_rng(seed)
     A = rng.uniform(-2, -1, size=(num, cfg.M, cfg.D))
     
-    b = rng.uniform(-10, -4, size=(num, cfg.M))
+    b = rng.uniform(-20, -11, size=(num, cfg.M))
     return A, b
 
 #xの特徴量の各分散を計算(D個生成)
@@ -74,8 +73,6 @@ def generate_dataset(cfg, num, seed):
     for i in range(num):
         a = solve_forward(cfg, Q_true, theta[i], A[i], b[i],Sigma_inv)
         a = np.array(a)
-        threshold = np.max(np.abs(a)) * 1e-5 # 最大値の1億分の1以下をカット
-        a[np.abs(a) < threshold] = 0
         a_hat.append(a)
 
     return {
@@ -105,3 +102,38 @@ def generate_dataset_with_fixed_Q(cfg, num, seed, Q_true):
         "Sigma_inv": Sigma_inv
     }
 
+def generate_noisy_Q(true_Q,sigma):
+    #真のQに対してノイズを加える。
+    noisy_Q = true_Q + np.random.normal(0,sigma,size=true_Q.shape)
+    
+    #非負制約と正規化を再適用
+    noisy_Q = np.maximum(noisy_Q,0)
+    noisy_Q /= np.sum(noisy_Q)
+    
+    return noisy_Q
+
+#ランダムノイズを作る。
+def make_noise_for_instance(sigma,size,i):
+    rng = np.random.default_rng(999+i)
+    return rng.normal(0,sigma,size)
+
+#ノイズありの時にデータをまとめて生成する。
+def generate_dataset_with_noise(cfg,num,seed,sigma,Q_true):
+    Sigma_inv = generate_Sigma_inv(cfg,seed)
+    theta = generate_theta(cfg,num,seed)
+    A, b = generate_constraints(cfg, num,seed)
+
+    a_hat = []
+    for i in range(num):
+        noise = make_noise_for_instance(sigma,2,i)
+        a = solve_forward_w_noise(cfg, Q_true, theta[i], A[i], b[i],Sigma_inv,noise[0],noise[1])
+        a = np.array(a)
+        a_hat.append(a)
+
+    return {
+        "theta": theta,
+        "A": A,
+        "b": b,
+        "a_hat": np.array(a_hat),
+        "Sigma_inv": Sigma_inv
+    }
