@@ -163,7 +163,7 @@ def inverse_vi_2(cfg, data):
     a_hat_all = data["a_hat"] # 観測値
 
     model = gp.Model()
-    model.setParam("OutputFlag", 1)
+    model.setParam("OutputFlag", 0)
     model.setParam("NumericFocus", 3)
     model.setParam("ScaleFlag", 2)
     
