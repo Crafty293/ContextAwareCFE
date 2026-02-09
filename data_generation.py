@@ -37,12 +37,6 @@ def generate_Sigma_inv(cfg, seed=None):
     M = rng.normal(0, 1, size=(cfg.D, cfg.D))
     M[np.abs(M) < 1e-4] = 0
     Sigma_inv = M.T @ M + 1.0 * np.eye(cfg.D)
-    # 対角成分以外（非対角成分）で、絶対値が小さいものを消す
-    for r in range(cfg.D):
-        for c in range(cfg.D):
-            if r != c: # 対角線以外
-                if abs(Sigma_inv[r, c]) < 1e-3:
-                    Sigma_inv[r, c] = 0
     return Sigma_inv
 
 

@@ -5,7 +5,7 @@ import numpy as np
 #参照点を用いた係数行列の推定方法
 def inverse_proposed(cfg, data, Q_ref):
     model = gp.Model()
-    model.setParam("OutputFlag", 1)
+    model.setParam("OutputFlag", 0)
     #数値精度を計算速度より優先する
     model.setParam("NumericFocus", 3)
     model.setParam("ScaleFlag", 2)  # より強力なスケーリングを適用
@@ -52,7 +52,7 @@ def inverse_proposed(cfg, data, Q_ref):
 
         for m in range(cfg.M):
             slack = sum(A[m,d]*a[d] for d in range(cfg.D)) - b[m]
-            model.addConstr(lam[i,m] * slack >= -5e-3)
+            model.addConstr(lam[i,m] * slack >= -5e-4)
 
         for d in range(cfg.D):
             model.addConstr(mu[i,d] * a[d] <= 1e-3)
